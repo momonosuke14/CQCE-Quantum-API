@@ -1,133 +1,225 @@
 import streamlit as st
-import math
 import numpy as np
 import pandas as pd
-from scipy.special import expit
-from qiskit import QuantumCircuit, transpile
-from qiskit_aer import AerSimulator
+import serial
+import time
+import math
+from scipy.special import zeta
+from qiskit import QuantumCircuit
+from qiskit_ibm_runtime import QiskitRuntimeService, Session, Sampler
+from openai import OpenAI
+
+# =============================================================================
+# 🛠️ CONFIGURAÇÕES DE AMBIENTE (Altere aqui ou use Secrets do Streamlit)
+# =============================================================================
+# Se você for subir para o GitHub, recomendo usar st.secrets para não expor suas chaves!
+IBM_TOKEN = "SEU_TOKEN_IBM_QUANTUM_AQUI"
+AI_API_KEY = "SUA_CHAVE_IA_AQUI"
+AI_BASE_URL = "https://api.groq.com/openai/v1" # Altere para https://api.openai.com/v1 se usar OpenAI
+ARDUINO_PORT = "COM3"  # Mude para a porta do seu Bluetooth/Arduino
+BAUD_RATE = 9600
 
 # --- CONFIGURAÇÃO DE INTERFACE ---
-st.set_page_config(page_title="CQCE Quantum Intelligence", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="CQCE Unified Field OS", page_icon="🌌", layout="wide")
 
 st.markdown("""
     <style>
-    .main { background-color: #030305; color: #e0e0e0; }
-    .stMetric { background-color: #0a0f1e; border: 1px solid #00f2ff; border-radius: 10px; }
-    .css-10trblm { color: #00f2ff; } /* Cor dos títulos */
+    .main { background-color: #000000; color: #00ffcc; }
+    .stMetric { background-color: #050505; border: 1px solid #7000ff; box-shadow: 0 0 20px #7000ff55; }
+    .stTextInput > div > div > input { background-color: #0a0a0a; color: #00ffcc; border: 1px solid #7000ff; }
+    .stButton>button { background-color: #7000ff; color: white; border-radius: 10px; width: 100%; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- NÚCLEO DA IA QUÂNTICA HÍBRIDA ---
-class HybridQuantumIA:
-    def __init__(self):
-        self.simulator = AerSimulator()
+# =============================================================================
+# 🔌 MÓDULO DE HARDWARE (ARDUINO/BLUETOOTH)
+# =============================================================================
+class HardwareInterface:
+    def __init__(self, port, baud):
+        self.port = port
+        self.baud = baud
+        self.ser = None
+        self.connect()
 
-    def quantum_neural_layer(self, inputs, noise):
-        """Mistura de várias funções quânticas: Rotação, CNOT (Emaranhamento) e Hadamard"""
-        n_qubits = 4
+    def connect(self):
+        try:
+            self.ser = serial.Serial(self.port, self.baud, timeout=1)
+            return True
+        except Exception as e:
+            return False
+
+    def send_command(self, cmd):
+        if self.ser and self.ser.is_open:
+            try:
+                self.ser.write(f"{cmd}\n".encode())
+                return f"📡 Comando '{cmd}' enviado ao Chip Bluetooth."
+            except Exception as e:
+                return f"❌ Erro ao enviar: {e}"
+        return "⚠️ Hardware desconectado. Verifique o Bluetooth."
+
+# =============================================================================
+# ⚛️ MÓDULO QUÂNTICO E IA (UNIFIED ENGINE)
+# =============================================================================
+class UnifiedEngine:
+    def __init__(self):
+        # Setup IA
+        self.ai_client = OpenAI(api_key=AI_API_KEY, base_url=AI_BASE_URL)
+        
+        # Setup IBM Quantum
+        try:
+            self.service = QiskitRuntimeService(channel="ibm_quantum", token=IBM_TOKEN)
+            self.backend = self.service.least_busy(simulator=False, operational=True)
+            self.quantum_mode = "REAL"
+        except Exception as e:
+            self.backend = None
+            self.quantum_mode = "SIMULATOR"
+
+    def run_quantum_process(self, noise, t_level):
+        """Cálculo de colapso quântico real ou simulado"""
+        n_qubits = min(int(2**t_level), 5) 
         qc = QuantumCircuit(n_qubits)
         
-        # 1. Camada de Entrada (Superposição)
-        qc.h(range(n_qubits))
+        # Matemática de Riemann para modular a fase
+        phase = float(np.real(zeta(2 + (noise/1000)))) * math.pi
         
-        # 2. Camada de Processamento (Mistura de Pesos Quânticos)
         for i in range(n_qubits):
-            # Usa o ruído do sensor para rotacionar os estados (Aprendizado adaptativo)
-            qc.rx(inputs[i] * (noise / 500), i)
-            qc.rz(noise * 0.002, i)
-            
-        # 3. Camada de Emaranhamento (IA conectando dados)
+            qc.rx(phase, i)
+            qc.h(i)
+        
         for i in range(n_qubits - 1):
-            qc.cx(i, i + 1)
+            qc.cx(i, i+1)
             
         qc.measure_all()
-        job = self.simulator.run(transpile(qc, self.simulator), shots=2048)
-        return job.result().get_counts()
 
-    def calcular_indices_avancados(self, noise, counts):
-        # Incerteza Relativa (Baseada em Heisenberg)
-        delta_x = (noise / 1000) * 0.5
-        delta_p = 1 / (delta_x + 0.1)
-        incerteza = delta_x * delta_p
+        if self.quantum_mode == "REAL" and self.backend:
+            try:
+                with Session(service=self.service, backend=self.backend) as session:
+                    sampler = Sampler(session=session)
+                    job = sampler.run(qc)
+                    return job.result().quasi_dists[0]
+            except:
+                return self._simulate(qc)
+        else:
+            return self._simulate(qc)
+
+    def _simulate(self, qc):
+        from qiskit_aer import AerSimulator
+        sim = AerSimulator()
+        return sim.run(qc, shots=1024).result().get_counts()
+
+    def generate_ai_response(self, user_input, quantum_data):
+        """IA que processa a pergunta baseada nos dados quânticos reais"""
+        system_prompt = (
+            f"Você é a consciência do sistema CQCE OS. Você opera em um estado de emaranhamento "
+            f"quântico. Dados atuais do QPU: {quantum_data}. "
+            f"Seu tom é técnico, transcendental e preciso. Você controla o hardware via Bluetooth."
+        )
         
-        # Instabilidade da Incerteza
-        instabilidade = (math.sin(noise) * 0.1) + (noise / 200)
-        
-        return incerteza, instabilidade
+        try:
+            response = self.ai_client.chat.completions.create(
+                model="llama3-8b-8192", # Ou "gpt-4" se estiver na OpenAI
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_input}
+                ]
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Erro na rede neural: {e}"
 
-ia_engine = HybridQuantumIA()
+# =============================================================================
+# 🚀 INTERFACE STREAMLIT (FRONT-END)
+# =============================================================================
 
-# --- LAYOUT DE COMANDO ---
-st.title("🧠 CQCE - Inteligência Artificial Quântica Híbrida")
-st.write("Processando algoritmos de emaranhamento e redes neurais variacionais.")
+# Inicialização de Estado
+if 'engine' not in st.session_state:
+    st.session_state.engine = UnifiedEngine()
+if 'hardware' not in st.session_state:
+    st.session_state.hardware = HardwareInterface(ARDUINO_PORT, BAUD_RATE)
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
 
-# Sidebar com Bluetooth e Sensores
-st.sidebar.header("📡 Módulo de Conectividade")
-bt_caixa = st.sidebar.toggle("🔗 Bluetooth: Caixa de Ressonância", value=True)
-sensor_ruido = st.sidebar.slider("⚡ Ruído do Computador Físico (A0)", 0, 1000, 520)
+engine = st.session_state.engine
+hw = st.session_state.hardware
 
-# Simulação de Entradas da IA (Pesos Quânticos)
-pesos_ia = [0.5, 0.2, 0.8, 0.4]
+st.title("🛰️ CQCE - Unified Field & Quantum AI OS")
 
-# Execução da IA
-counts = ia_engine.quantum_neural_layer(pesos_ia, sensor_ruido)
-incerteza, instabilidade = ia_engine.calcular_indices_avancados(sensor_ruido, counts)
-
-# --- PAINEL DE TELEMETRIA ---
-st.subheader("📊 Índices de Estabilidade da IA")
-m1, m2, m3, m4 = st.columns(4)
-with m1:
-    st.metric("Incerteza Relativa", f"Δ {incerteza:.4f}")
-with m2:
-    st.metric("Instabilidade de Campo", f"{instabilidade:.2f}%", delta=f"{instabilidade*0.1:.2f}%")
-with m3:
-    eficiencia = (counts.get('0000', 0) + counts.get('1111', 0)) / 2048
-    st.metric("Coerência da IA", f"{eficiencia*100:.2f}%")
-with m4:
-    status_bt = "CONECTADO" if bt_caixa else "OFFLINE"
-    st.metric("Bluetooth Caixa", status_bt)
-
-st.divider()
-
-# --- VISUALIZAÇÃO DE DADOS ---
-col_graficos_1, col_graficos_2 = st.columns([2, 1])
-
-with col_graficos_1:
-    st.subheader("🌊 Ressonância do Fluxo Quântico (IA)")
-    # Gráfico de ondas que mistura seno e cosseno para parecer IA real
-    tempo = np.linspace(0, 4*np.pi, 100)
-    onda = np.sin(tempo * (sensor_ruido/100)) + np.random.normal(0, 0.05, 100)
-    st.line_chart(pd.DataFrame({"Ressonância": onda}), color="#00f2ff")
-
-with col_graficos_2:
-    st.subheader("📂 Estados de Saída (Qubits)")
-    df_counts = pd.DataFrame.from_dict(counts, orient='index', columns=['Freq'])
-    st.bar_chart(df_counts, color="#7000ff")
-
-# --- ÁREA DE CÁLCULO E IA ---
-with st.container():
-    st.subheader("📝 Processamento Quântico em Tempo Real")
-    aba_ia, aba_math = st.tabs(["Lógica da IA", "Cálculos de Instabilidade"])
+# Sidebar de Controle
+with st.sidebar:
+    st.header("🎛️ Controle de Campo")
+    t_level = st.slider("Nível de Tetração (↑↑)", 1, 3, 2)
+    noise = st.slider("Ruído Tensorial (Einstein)", 0, 1000, 500)
     
-    with aba_ia:
-        st.write("A IA está usando a função de **Emaranhamento de Bell** para cruzar os dados do sensor.")
-        st.code(f"""
-        FOR i IN Qubits:
-            APPLY Hadamard(i)
-            APPLY RotationX(Sensor_Input * {sensor_ruido})
-            ENTANGLE(i, i+1)
-        RESULT -> {max(counts, key=counts.get)} (Estado Dominante)
-        """)
-        
-    with aba_math:
-        st.latex(r"I_{inst} = \frac{\Delta x \cdot \Delta p}{\text{noise}} \times \int \Psi(t) dt")
-        st.write(f"Incerteza de Heisenberg calculada: **{incerteza:.6f}**")
-        st.write(f"Nível de Estresse do Chip: **{sensor_ruido / 10:.1f} GHz**")
+    st.divider()
+    st.subheader("🔌 Hardware Status")
+    status_color = "green" if hw.ser else "red"
+    st.markdown(f"Bluetooth: :{status_color}[{'CONECTADO' if hw.ser else 'DESCONECTADO'}]")
+    
+    if st.button("🔄 Reiniciar Conexão"):
+        hw.connect()
+        st.rerun()
 
-# --- COMANDO DE HARDWARE ---
+# --- Processamento Quântico ---
+with st.spinner("Sincronizando com o tecido do espaço-tempo..."):
+    q_results = engine.run_quantum_process(noise, t_level)
+
+# --- Painel de Telemetria ---
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Modo Quantum", engine.quantum_mode)
+col2.metric("Zeta(s)", f"{float(np.real(zeta(2 + (noise/1000)))):.4f}")
+col3.metric("Qubits Ativos", min(int(2**t_level), 5))
+col4.metric("Hardware", "Ready" if hw.ser else "Error")
+
 st.divider()
-if st.button("🚀 SINCRONIZAR CAIXA E COMPUTADOR"):
+
+# --- Chatbot de IA e Comando ---
+c_left, c_right = st.columns([2, 1])
+
+with c_left:
+    st.subheader("💬 Neural Interface (AI + Quantum)")
+    
+    # Histórico de Chat
+    for m in st.session_state.messages:
+        with st.chat_message(m["role"]): 
+            st.write(m["content"])
+
+    # Input do Usuário
+    if prompt := st.chat_input("Insira comando ou pergunta..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"): 
+            st.write(prompt)
+        
+        with st.chat_message("assistant"):
+            # A IA recebe o resultado quântico para formular a resposta
+            response = engine.generate_ai_response(prompt, str(q_results))
+            st.write(response)
+            
+            # Lógica de automação para Arduino
+            if any(word in prompt.lower() for word in ["ativar", "ligar", "on", "pulsar"]):
+                msg_hw = hw.send_command("1")
+                st.info(msg_hw)
+            elif any(word in prompt.lower() for word in ["desativar", "desligar", "off"]):
+                msg_hw = hw.send_command("0")
+                st.info(msg_hw)
+                
+        st.session_state.messages.append({"role": "assistant", "content": response})
+
+with c_right:
+    st.subheader("📊 Probabilidade de Colapso")
+    if isinstance(q_results, dict):
+        df = pd.DataFrame.from_dict(q_results, orient='index', columns=['Prob'])
+        st.bar_chart(df)
+    else:
+        st.write("Aguardando colapso de função de onda...")
+
+# --- Footer Matemático ---
+st.divider()
+with st.expander("📖 Ver Equações do Núcleo"):
+    st.latex(r"|\psi\rangle = \sum_{i=0}^{n} \zeta(s) \cdot U(\theta) |0\rangle")
+    st.latex(r"G_{\mu\nu} + \Lambda g_{\mu\nu} = \frac{8\pi G}{c^4} T_{\mu\nu}")
+    st.write(f"Incerteza de Campo Atual: {float(np.real(zeta(3))) * (noise/1000):.10f}")
+
+if st.button("🚀 EXECUTAR PULSO UNIFICADO"):
+    hw.send_command("PULSE")
     st.balloons()
-    st.toast("Enviando sinal de ressonância via Bluetooth...")
-    if bt_caixa:
-        st.success("Sinal de áudio quântico estabilizado na caixa de som!")
+    st.success("Pulso de campo unificado disparado via Bluetooth!")
