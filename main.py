@@ -6,108 +6,128 @@ from scipy.special import expit
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 
-# --- CONFIGURAÇÃO VISUAL ---
-st.set_page_config(page_title="CQCE Quantum Command", page_icon="⚛️", layout="wide")
+# --- CONFIGURAÇÃO DE INTERFACE ---
+st.set_page_config(page_title="CQCE Quantum Intelligence", page_icon="🧠", layout="wide")
 
-# CSS Customizado para Layout "Gamer/Científico"
 st.markdown("""
     <style>
-    .main { background-color: #050505; color: #00ffcc; }
-    div[data-testid="stMetricValue"] { font-size: 28px; color: #00ffcc; }
-    .stButton>button { width: 100%; border-radius: 20px; background: #7000ff; color: white; }
-    .stExpander { border: 1px solid #7000ff; background: #111; }
+    .main { background-color: #030305; color: #e0e0e0; }
+    .stMetric { background-color: #0a0f1e; border: 1px solid #00f2ff; border-radius: 10px; }
+    .css-10trblm { color: #00f2ff; } /* Cor dos títulos */
     </style>
     """, unsafe_allow_html=True)
 
-# --- ENGINE ---
-class QuantumCore:
+# --- NÚCLEO DA IA QUÂNTICA HÍBRIDA ---
+class HybridQuantumIA:
     def __init__(self):
-        self.sim = AerSimulator()
+        self.simulator = AerSimulator()
 
-    def get_heisenberg(self, noise):
-        return (noise / 1000) * 0.329 # Simulação da incerteza Delta
-
-    def get_ia_counts(self, sensor_val):
-        qc = QuantumCircuit(3)
-        qc.h(range(3))
-        qc.rx(sensor_val * 0.01, 0)
+    def quantum_neural_layer(self, inputs, noise):
+        """Mistura de várias funções quânticas: Rotação, CNOT (Emaranhamento) e Hadamard"""
+        n_qubits = 4
+        qc = QuantumCircuit(n_qubits)
+        
+        # 1. Camada de Entrada (Superposição)
+        qc.h(range(n_qubits))
+        
+        # 2. Camada de Processamento (Mistura de Pesos Quânticos)
+        for i in range(n_qubits):
+            # Usa o ruído do sensor para rotacionar os estados (Aprendizado adaptativo)
+            qc.rx(inputs[i] * (noise / 500), i)
+            qc.rz(noise * 0.002, i)
+            
+        # 3. Camada de Emaranhamento (IA conectando dados)
+        for i in range(n_qubits - 1):
+            qc.cx(i, i + 1)
+            
         qc.measure_all()
-        return self.sim.run(qc, shots=1024).result().get_counts()
+        job = self.simulator.run(transpile(qc, self.simulator), shots=2048)
+        return job.result().get_counts()
 
-core = QuantumCore()
+    def calcular_indices_avancados(self, noise, counts):
+        # Incerteza Relativa (Baseada em Heisenberg)
+        delta_x = (noise / 1000) * 0.5
+        delta_p = 1 / (delta_x + 0.1)
+        incerteza = delta_x * delta_p
+        
+        # Instabilidade da Incerteza
+        instabilidade = (math.sin(noise) * 0.1) + (noise / 200)
+        
+        return incerteza, instabilidade
 
-# --- SIDEBAR E CONECTIVIDADE ---
-st.sidebar.title("📡 HARDWARE LINK")
-status_bt = st.sidebar.status("Bluetooth: Desconectado", expanded=False)
-if st.sidebar.button("🔗 Parear Caixa de Som"):
-    status_bt.update(label="Bluetooth: CONECTADO", state="complete", expanded=False)
-    st.sidebar.success("Dispositivo: CQCE-Speaker-01")
+ia_engine = HybridQuantumIA()
 
-st.sidebar.divider()
-sensor = st.sidebar.slider("⚡ Ruído do Computador Físico", 0, 1000, 450)
-ia_power = st.sidebar.select_slider("🧠 Potência da IA", [256, 1024, 4096])
+# --- LAYOUT DE COMANDO ---
+st.title("🧠 CQCE - Inteligência Artificial Quântica Híbrida")
+st.write("Processando algoritmos de emaranhamento e redes neurais variacionais.")
 
-# --- CÁLCULOS ---
-counts = core.get_ia_counts(sensor)
-incerteza = core.get_heisenberg(sensor)
-eficiencia = (counts.get('111', 0) + counts.get('000', 0)) / 1024
-instabilidade = (1 - eficiencia) * (sensor / 500)
+# Sidebar com Bluetooth e Sensores
+st.sidebar.header("📡 Módulo de Conectividade")
+bt_caixa = st.sidebar.toggle("🔗 Bluetooth: Caixa de Ressonância", value=True)
+sensor_ruido = st.sidebar.slider("⚡ Ruído do Computador Físico (A0)", 0, 1000, 520)
 
-# --- LAYOUT PRINCIPAL ---
-st.title("🛰️ CQCE - Quantum Command Center")
-st.write(f"Sincronização Ativa | Incerteza de Heisenberg: Δ {incerteza:.4f}")
+# Simulação de Entradas da IA (Pesos Quânticos)
+pesos_ia = [0.5, 0.2, 0.8, 0.4]
 
-# LINHA 1: ÍNDICES DE TELEMETRIA
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric("Incerteza (Δ)", f"{incerteza:.5f}")
-with col2:
-    st.metric("Instabilidade", f"{instabilidade:.2f}%", delta="-2.1%", delta_color="inverse")
-with col3:
-    st.metric("Eficiência IA", f"{eficiencia*100:.1f}%")
-with col4:
-    st.metric("Temp. Núcleo", "2.7K", delta="Cryo-Stable")
+# Execução da IA
+counts = ia_engine.quantum_neural_layer(pesos_ia, sensor_ruido)
+incerteza, instabilidade = ia_engine.calcular_indices_avancados(sensor_ruido, counts)
 
-st.divider()
-
-# LINHA 2: GRÁFICOS LADO A LADO
-c_left, c_right = st.columns([1.5, 1])
-
-with c_left:
-    st.subheader("📊 Gráfico de Ressonância Magnética (Computador Físico)")
-    # Simulação de ondas de ressonância
-    x = np.linspace(0, 10, 100)
-    y = np.sin(x * (sensor/50)) * np.cos(x)
-    res_df = pd.DataFrame({'Ressonância': y}, index=x)
-    st.line_chart(res_df, color="#00ffcc", height=300)
-
-with c_right:
-    st.subheader("🧠 Saída da IA Quântica")
-    df_bars = pd.DataFrame.from_dict(counts, orient='index')
-    st.bar_chart(df_bars, color="#7000ff", height=300)
+# --- PAINEL DE TELEMETRIA ---
+st.subheader("📊 Índices de Estabilidade da IA")
+m1, m2, m3, m4 = st.columns(4)
+with m1:
+    st.metric("Incerteza Relativa", f"Δ {incerteza:.4f}")
+with m2:
+    st.metric("Instabilidade de Campo", f"{instabilidade:.2f}%", delta=f"{instabilidade*0.1:.2f}%")
+with m3:
+    eficiencia = (counts.get('0000', 0) + counts.get('1111', 0)) / 2048
+    st.metric("Coerência da IA", f"{eficiencia*100:.2f}%")
+with m4:
+    status_bt = "CONECTADO" if bt_caixa else "OFFLINE"
+    st.metric("Bluetooth Caixa", status_bt)
 
 st.divider()
 
-# LINHA 3: FUNÇÕES AVANÇADAS E CÁLCULOS
+# --- VISUALIZAÇÃO DE DADOS ---
+col_graficos_1, col_graficos_2 = st.columns([2, 1])
+
+with col_graficos_1:
+    st.subheader("🌊 Ressonância do Fluxo Quântico (IA)")
+    # Gráfico de ondas que mistura seno e cosseno para parecer IA real
+    tempo = np.linspace(0, 4*np.pi, 100)
+    onda = np.sin(tempo * (sensor_ruido/100)) + np.random.normal(0, 0.05, 100)
+    st.line_chart(pd.DataFrame({"Ressonância": onda}), color="#00f2ff")
+
+with col_graficos_2:
+    st.subheader("📂 Estados de Saída (Qubits)")
+    df_counts = pd.DataFrame.from_dict(counts, orient='index', columns=['Freq'])
+    st.bar_chart(df_counts, color="#7000ff")
+
+# --- ÁREA DE CÁLCULO E IA ---
 with st.container():
-    st.subheader("📝 Laboratório de Cálculos Quânticos")
-    t1, t2 = st.tabs(["Matemática da IA", "Logs do Sistema"])
+    st.subheader("📝 Processamento Quântico em Tempo Real")
+    aba_ia, aba_math = st.tabs(["Lógica da IA", "Cálculos de Instabilidade"])
     
-    with t1:
-        st.latex(r"I(instabilidade) = \int \psi^* \hat{H} \psi \, d\tau \times \text{noise}")
-        st.write(f"Cálculo atual da Incerteza: **{incerteza:.6f}**")
-        st.write(f"Estado de Superposição da IA: **|ψ⟩ = {eficiencia:.2f}|000⟩ + {1-eficiencia:.2f}|111⟩**")
-    
-    with t2:
+    with aba_ia:
+        st.write("A IA está usando a função de **Emaranhamento de Bell** para cruzar os dados do sensor.")
         st.code(f"""
-        [INFO] Bluetooth transmitindo para Caixa...
-        [CALC] Incerteza calculada em tempo real: {incerteza}
-        [IA] Shots processados: {ia_power}
-        [HARDWARE] Sensor captou ruído de {sensor} unidades.
+        FOR i IN Qubits:
+            APPLY Hadamard(i)
+            APPLY RotationX(Sensor_Input * {sensor_ruido})
+            ENTANGLE(i, i+1)
+        RESULT -> {max(counts, key=counts.get)} (Estado Dominante)
         """)
+        
+    with aba_math:
+        st.latex(r"I_{inst} = \frac{\Delta x \cdot \Delta p}{\text{noise}} \times \int \Psi(t) dt")
+        st.write(f"Incerteza de Heisenberg calculada: **{incerteza:.6f}**")
+        st.write(f"Nível de Estresse do Chip: **{sensor_ruido / 10:.1f} GHz**")
 
-# RODAPÉ DE COMANDO
-if st.button("🚀 EXECUTAR PULSO DE RESSONÂNCIA"):
+# --- COMANDO DE HARDWARE ---
+st.divider()
+if st.button("🚀 SINCRONIZAR CAIXA E COMPUTADOR"):
     st.balloons()
-    st.toast("Pulso enviado via Bluetooth para a caixa!")
-    st.success("Sinal de ressonância física estabilizado no computador.")
+    st.toast("Enviando sinal de ressonância via Bluetooth...")
+    if bt_caixa:
+        st.success("Sinal de áudio quântico estabilizado na caixa de som!")
