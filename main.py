@@ -2,6 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import math
+import streamlit as st
+
+st.title("🛰️ Sistema Quântico CQCE")
+st.write("O motor quântico está ativo!")
 import numpy as np
 from scipy.special import expit # Função sigmoide para normalização
 
