@@ -1,6 +1,9 @@
 streamlit
-qiskit
-qiskit-aer
 numpy
 pandas
 scipy
+qiskit
+qiskit-ibm-runtime
+pyserial
+openai
+qiskit-aer
