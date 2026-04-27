@@ -1,7 +1,5 @@
-fastapi
-uvicorn
+streamlit
 qiskit
 qiskit-aer
 numpy
 scipy
-pydantic
