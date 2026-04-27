@@ -6,121 +6,108 @@ from scipy.special import expit
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 
-# --- CONFIGURAÇÃO E ESTILO ---
-st.set_page_config(page_title="CQCE Quantum Command", page_icon="🧪", layout="wide")
+# --- CONFIGURAÇÃO VISUAL ---
+st.set_page_config(page_title="CQCE Quantum Command", page_icon="⚛️", layout="wide")
 
+# CSS Customizado para Layout "Gamer/Científico"
 st.markdown("""
     <style>
-    .reportview-container { background: #0a0a12; }
-    .metric-card {
-        background-color: #161b22;
-        border: 1px solid #30363d;
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
-    }
+    .main { background-color: #050505; color: #00ffcc; }
+    div[data-testid="stMetricValue"] { font-size: 28px; color: #00ffcc; }
+    .stButton>button { width: 100%; border-radius: 20px; background: #7000ff; color: white; }
+    .stExpander { border: 1px solid #7000ff; background: #111; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- ENGINE QUÂNTICA AVANÇADA ---
-class AdvancedQuantumEngine:
+# --- ENGINE ---
+class QuantumCore:
     def __init__(self):
-        self.simulator = AerSimulator()
+        self.sim = AerSimulator()
 
-    def calcular_incerteza_heisenberg(self, noise):
-        # O princípio da incerteza: Delta X * Delta P >= h_bar / 2
-        # Simulamos que quanto maior o ruído, maior a incerteza do sistema
-        h_bar = 0.6582 # eV·fs (simplificado)
-        incerteza = (noise / 100) * (h_bar / 2)
-        return incerteza
+    def get_heisenberg(self, noise):
+        return (noise / 1000) * 0.329 # Simulação da incerteza Delta
 
-    def indice_instabilidade(self, eficiencia, entropia):
-        # Cálculo híbrido de estabilidade
-        instabilidade = (1 - eficiencia) * entropia
-        return instabilidade * 100
-
-    def gerador_ressonancia(self, noise):
-        # Simula a ressonância magnética do computador físico
-        freq = np.linspace(0, 10, 100)
-        amplitude = np.sin(freq * (noise/100)) * np.exp(-freq/5)
-        return pd.DataFrame({'Frequência (GHz)': freq, 'Ressonância': amplitude})
-
-    def algoritmo_ia_quantica(self, noise):
-        # Simula funções de IA baseadas em Qubits (Portas de Rotação e Identidade)
+    def get_ia_counts(self, sensor_val):
         qc = QuantumCircuit(3)
-        for i in range(3):
-            qc.rx(noise * 0.001 * math.pi, i)
-            qc.h(i)
+        qc.h(range(3))
+        qc.rx(sensor_val * 0.01, 0)
         qc.measure_all()
-        return self.simulator.run(qc, shots=1024).result().get_counts()
+        return self.sim.run(qc, shots=1024).result().get_counts()
 
-engine = AdvancedQuantumEngine()
+core = QuantumCore()
 
-# --- INTERFACE DE COMANDO ---
-st.title("🌌 CQCE - Quantum IA & Command Center")
-st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2103/2103633.png", width=100)
-
-# --- BLUETOOTH & CONECTIVIDADE ---
-st.sidebar.header("📡 Conectividade")
-bt_status = st.sidebar.toggle("Ativar Bluetooth (Caixa de Som)")
-if bt_status:
-    st.sidebar.success("Procurando dispositivos CQCE...")
-    st.sidebar.info("Conectado: 'Caixa_Quantica_01'")
+# --- SIDEBAR E CONECTIVIDADE ---
+st.sidebar.title("📡 HARDWARE LINK")
+status_bt = st.sidebar.status("Bluetooth: Desconectado", expanded=False)
+if st.sidebar.button("🔗 Parear Caixa de Som"):
+    status_bt.update(label="Bluetooth: CONECTADO", state="complete", expanded=False)
+    st.sidebar.success("Dispositivo: CQCE-Speaker-01")
 
 st.sidebar.divider()
+sensor = st.sidebar.slider("⚡ Ruído do Computador Físico", 0, 1000, 450)
+ia_power = st.sidebar.select_slider("🧠 Potência da IA", [256, 1024, 4096])
 
-# Parâmetros de Entrada
-st.sidebar.header("⚙️ Variáveis de Campo")
-sensor_val = st.sidebar.slider("Ruído do Sensor (Hardware)", 0, 1000, 450)
-shots = st.sidebar.select_slider("Potência da IA (Shots)", options=[1024, 2048, 4096, 8192])
+# --- CÁLCULOS ---
+counts = core.get_ia_counts(sensor)
+incerteza = core.get_heisenberg(sensor)
+eficiencia = (counts.get('111', 0) + counts.get('000', 0)) / 1024
+instabilidade = (1 - eficiencia) * (sensor / 500)
 
-# --- PROCESSAMENTO ---
-counts_ia = engine.algoritmo_ia_quantica(sensor_val)
-eficiencia = (sum([v for k, v in counts_ia.items() if k.count('1') > 1]) / 1024)
-entropia = -sum([(v/1024)*math.log2(v/1024) for v in counts_ia.values()])
-incerteza = engine.calcular_incerteza_heisenberg(sensor_val)
-instabilidade = engine.indice_instabilidade(eficiencia, entropia)
+# --- LAYOUT PRINCIPAL ---
+st.title("🛰️ CQCE - Quantum Command Center")
+st.write(f"Sincronização Ativa | Incerteza de Heisenberg: Δ {incerteza:.4f}")
 
-# --- PAINEL DE ÍNDICES (A sua nova funcionalidade!) ---
-st.subheader("📊 Índices de Telemetria Quântica")
-c1, c2, c3, c4 = st.columns(4)
-
-with c1:
-    st.metric("Índice de Incerteza", f"Δ {incerteza:.4f}")
-with c2:
-    st.metric("Instabilidade Total", f"{instabilidade:.2f}%", delta=f"{sensor_val/100}%", delta_color="inverse")
-with c3:
-    st.metric("Entropia de IA", f"{entropia:.3f} bits")
-with c4:
-    st.metric("Sincronia Bluetooth", "98%" if bt_status else "0%")
+# LINHA 1: ÍNDICES DE TELEMETRIA
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("Incerteza (Δ)", f"{incerteza:.5f}")
+with col2:
+    st.metric("Instabilidade", f"{instabilidade:.2f}%", delta="-2.1%", delta_color="inverse")
+with col3:
+    st.metric("Eficiência IA", f"{eficiencia*100:.1f}%")
+with col4:
+    st.metric("Temp. Núcleo", "2.7K", delta="Cryo-Stable")
 
 st.divider()
 
-# --- VISUALIZAÇÃO DE RESSONÂNCIA ---
-col_left, col_right = st.columns([3, 2])
+# LINHA 2: GRÁFICOS LADO A LADO
+c_left, c_right = st.columns([1.5, 1])
 
-with col_left:
-    st.subheader("🛰️ Ressonância Magnética do Computador Físico")
-    res_data = engine.gerador_ressonancia(sensor_val)
-    st.area_chart(res_data.set_index('Frequência (GHz)'), color="#00ffcc")
+with c_left:
+    st.subheader("📊 Gráfico de Ressonância Magnética (Computador Físico)")
+    # Simulação de ondas de ressonância
+    x = np.linspace(0, 10, 100)
+    y = np.sin(x * (sensor/50)) * np.cos(x)
+    res_df = pd.DataFrame({'Ressonância': y}, index=x)
+    st.line_chart(res_df, color="#00ffcc", height=300)
 
-with col_right:
+with c_right:
     st.subheader("🧠 Saída da IA Quântica")
-    # Gráfico de barras com as cores que você escolheu
-    df_ia = pd.DataFrame.from_dict(counts_ia, orient='index', columns=['Ocorrências'])
-    st.bar_chart(df_ia, color="#7000ff")
+    df_bars = pd.DataFrame.from_dict(counts, orient='index')
+    st.bar_chart(df_bars, color="#7000ff", height=300)
 
-# --- ÁREA DE CÁLCULOS TÉCNICOS ---
-with st.expander("📝 Ver Cálculos Matemáticos da IA"):
-    st.latex(r"|\psi\rangle = \cos(\theta/2)|0\rangle + e^{i\phi}\sin(\theta/2)|1\rangle")
-    st.write(f"Cálculo da Matriz de Densidade para ruído de **{sensor_val} units**:")
-    st.write(f"Incerteza Relativa calculada: **{(incerteza * 100):.6f}**")
+st.divider()
 
-# --- BOTÕES DE COMANDO ---
-st.sidebar.divider()
-if st.sidebar.button("🔊 Testar Ressonância na Caixa"):
-    st.toast("Enviando pulso senoidal via Bluetooth...")
+# LINHA 3: FUNÇÕES AVANÇADAS E CÁLCULOS
+with st.container():
+    st.subheader("📝 Laboratório de Cálculos Quânticos")
+    t1, t2 = st.tabs(["Matemática da IA", "Logs do Sistema"])
+    
+    with t1:
+        st.latex(r"I(instabilidade) = \int \psi^* \hat{H} \psi \, d\tau \times \text{noise}")
+        st.write(f"Cálculo atual da Incerteza: **{incerteza:.6f}**")
+        st.write(f"Estado de Superposição da IA: **|ψ⟩ = {eficiencia:.2f}|000⟩ + {1-eficiencia:.2f}|111⟩**")
+    
+    with t2:
+        st.code(f"""
+        [INFO] Bluetooth transmitindo para Caixa...
+        [CALC] Incerteza calculada em tempo real: {incerteza}
+        [IA] Shots processados: {ia_power}
+        [HARDWARE] Sensor captou ruído de {sensor} unidades.
+        """)
+
+# RODAPÉ DE COMANDO
+if st.button("🚀 EXECUTAR PULSO DE RESSONÂNCIA"):
     st.balloons()
-
-if st.sidebar.button("🚨 Resetar Núcleo"):
-    st.warning("Reiniciando matrizes de coerência...")
+    st.toast("Pulso enviado via Bluetooth para a caixa!")
+    st.success("Sinal de ressonância física estabilizado no computador.")
