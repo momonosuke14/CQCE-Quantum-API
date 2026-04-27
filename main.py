@@ -6,123 +6,121 @@ from scipy.special import expit
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="CQCE Quantum Monitor", page_icon="⚛️", layout="wide")
+# --- CONFIGURAÇÃO E ESTILO ---
+st.set_page_config(page_title="CQCE Quantum Command", page_icon="🧪", layout="wide")
 
-# Estilo CSS para manter o visual escuro e moderno
 st.markdown("""
     <style>
-    .main { background-color: #0e1117; }
-    .stMetric {
-        background-color: #1e2130;
-        padding: 15px;
+    .reportview-container { background: #0a0a12; }
+    .metric-card {
+        background-color: #161b22;
+        border: 1px solid #30363d;
+        padding: 20px;
         border-radius: 10px;
+        text-align: center;
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🛰️ Sistema Quântico CQCE")
-st.write("Monitor quântico processando ruído em tempo real via Qiskit Aer.")
-
-# --- MOTOR QUÂNTICO (Lógica de Processamento) ---
-class QuantumEngine:
+# --- ENGINE QUÂNTICA AVANÇADA ---
+class AdvancedQuantumEngine:
     def __init__(self):
         self.simulator = AerSimulator()
 
-    def processamento_inverso(self, noise_level):
-        qc = QuantumCircuit(1, 1)
-        theta = (noise_level / 1000) * 2 * math.pi
-        phi = math.sin(theta) * math.pi 
-        qc.rx(theta, 0)
-        qc.rz(phi, 0)
-        qc.h(0) 
-        qc.measure(0, 0)
-        job = self.simulator.run(transpile(qc, self.simulator), shots=256)
-        counts = job.result().get_counts()
-        return counts.get('1', 0) / 256
+    def calcular_incerteza_heisenberg(self, noise):
+        # O princípio da incerteza: Delta X * Delta P >= h_bar / 2
+        # Simulamos que quanto maior o ruído, maior a incerteza do sistema
+        h_bar = 0.6582 # eV·fs (simplificado)
+        incerteza = (noise / 100) * (h_bar / 2)
+        return incerteza
 
-    def calculate_entropy(self, noise_level):
-        p = expit((noise_level - 500) / 100) 
-        return - (p * math.log2(p + 1e-9) + (1-p) * math.log2(1-p + 1e-9))
+    def indice_instabilidade(self, eficiencia, entropia):
+        # Cálculo híbrido de estabilidade
+        instabilidade = (1 - eficiencia) * entropia
+        return instabilidade * 100
 
-    def rodar_simulacao_complexa(self, tipo, n_shots):
-        qc = QuantumCircuit(2)
-        if tipo == "Bell (2 qubits)":
-            qc.h(0)
-            qc.cx(0, 1)
+    def gerador_ressonancia(self, noise):
+        # Simula a ressonância magnética do computador físico
+        freq = np.linspace(0, 10, 100)
+        amplitude = np.sin(freq * (noise/100)) * np.exp(-freq/5)
+        return pd.DataFrame({'Frequência (GHz)': freq, 'Ressonância': amplitude})
+
+    def algoritmo_ia_quantica(self, noise):
+        # Simula funções de IA baseadas em Qubits (Portas de Rotação e Identidade)
+        qc = QuantumCircuit(3)
+        for i in range(3):
+            qc.rx(noise * 0.001 * math.pi, i)
+            qc.h(i)
         qc.measure_all()
-        job = self.simulator.run(qc, shots=n_shots)
-        return job.result().get_counts()
+        return self.simulator.run(qc, shots=1024).result().get_counts()
 
-engine = QuantumEngine()
+engine = AdvancedQuantumEngine()
 
-# --- SIDEBAR (Controle de Hardware e Parâmetros) ---
-st.sidebar.header("📡 Controle de Hardware")
-noise_input = st.sidebar.slider("Simular Ruído do Sensor (Arduino)", 0, 1000, 500)
+# --- INTERFACE DE COMANDO ---
+st.title("🌌 CQCE - Quantum IA & Command Center")
+st.sidebar.image("https://cdn-icons-png.flaticon.com/512/2103/2103633.png", width=100)
+
+# --- BLUETOOTH & CONECTIVIDADE ---
+st.sidebar.header("📡 Conectividade")
+bt_status = st.sidebar.toggle("Ativar Bluetooth (Caixa de Som)")
+if bt_status:
+    st.sidebar.success("Procurando dispositivos CQCE...")
+    st.sidebar.info("Conectado: 'Caixa_Quantica_01'")
 
 st.sidebar.divider()
-st.sidebar.header("Parâmetros do Chip")
-circuito_selecionado = st.sidebar.selectbox("Circuito-alvo", ["Bell (2 qubits)", "GHZ", "QFT", "Grover"])
-shots = st.sidebar.slider("Shots por execução", 1024, 8192, 4096)
 
-st.sidebar.subheader("Ruído de Porta")
-erro_1q = st.sidebar.slider("Erro depolarizante 1Q", 0.0000, 0.0100, 0.0040, format="%.4f")
-erro_leitura = st.sidebar.slider("Erro de leitura", 0.0000, 0.1000, 0.0200, format="%.4f")
+# Parâmetros de Entrada
+st.sidebar.header("⚙️ Variáveis de Campo")
+sensor_val = st.sidebar.slider("Ruído do Sensor (Hardware)", 0, 1000, 450)
+shots = st.sidebar.select_slider("Potência da IA (Shots)", options=[1024, 2048, 4096, 8192])
 
-# --- PROCESSAMENTO DOS DADOS ---
-eficiencia = engine.processamento_inverso(noise_input)
-entropia = engine.calculate_entropy(noise_input)
-contagens = engine.rodar_simulacao_complexa(circuito_selecionado, shots)
+# --- PROCESSAMENTO ---
+counts_ia = engine.algoritmo_ia_quantica(sensor_val)
+eficiencia = (sum([v for k, v in counts_ia.items() if k.count('1') > 1]) / 1024)
+entropia = -sum([(v/1024)*math.log2(v/1024) for v in counts_ia.values()])
+incerteza = engine.calcular_incerteza_heisenberg(sensor_val)
+instabilidade = engine.indice_instabilidade(eficiencia, entropia)
 
-# Criando dados para o gráfico de barras (Ideal vs Ruidoso)
-labels = list(contagens.keys())
-valores_reais = list(contagens.values())
-# O ruído do gráfico é influenciado pelo slider do sensor e pelo erro de porta
-fator_ruido = (noise_input / 1000) * (1 + erro_1q * 10)
-valores_ruido = [v * (1 - (fator_ruido * 0.1)) if i % 2 == 0 else v + (shots*0.05*fator_ruido) for i, v in enumerate(valores_reais)]
-
-df_chart = pd.DataFrame({
-    'Ideal': valores_reais,
-    'Com ruído': valores_ruido
-}, index=labels)
-
-# --- DASHBOARD VISUAL ---
-# Painel de métricas (Cima)
-col_m1, col_m2, col_m3 = st.columns(3)
-with col_m1:
-    st.metric("Eficiência Quântica", f"{eficiencia * 100:.2f}%")
-with col_m2:
-    st.metric("Entropia do Sinal", f"{entropia:.4f}")
-with col_m3:
-    sucesso = 100 - (erro_1q * 100 + (noise_input/50))
-    st.metric("Fidelidade do Sistema", f"{sucesso:.2f}%")
-
-st.divider()
-
-# Gráficos (Meio)
-c1, c2 = st.columns([2, 1])
+# --- PAINEL DE ÍNDICES (A sua nova funcionalidade!) ---
+st.subheader("📊 Índices de Telemetria Quântica")
+c1, c2, c3, c4 = st.columns(4)
 
 with c1:
-    st.subheader("Análise de Fidelidade (Ideal vs Ruidoso)")
-    # Cores Ciano e Roxo como na imagem que você gostou
-    st.bar_chart(df_chart, color=["#00f2ff", "#7000ff"])
-
+    st.metric("Índice de Incerteza", f"Δ {incerteza:.4f}")
 with c2:
-    st.subheader("Ressonância do Sinal")
-    chart_data = pd.DataFrame(np.random.randn(20, 1), columns=['frequência'])
-    st.line_chart(chart_data)
-    
-    status = "✅ ESTÁVEL" if sucesso > 80 else "⚠️ INSTÁVEL"
-    if sucesso > 80:
-        st.success(f"Status: {status}")
-    else:
-        st.warning(f"Status: {status}")
+    st.metric("Instabilidade Total", f"{instabilidade:.2f}%", delta=f"{sensor_val/100}%", delta_color="inverse")
+with c3:
+    st.metric("Entropia de IA", f"{entropia:.3f} bits")
+with c4:
+    st.metric("Sincronia Bluetooth", "98%" if bt_status else "0%")
 
 st.divider()
 
-# Botão de Ação (Baixo)
-if st.button("🚀 Disparar Pulso Quântico"):
-    st.balloons()
-    st.success("Pulso processado pelo Qiskit com sucesso! Dados sincronizados com o Arduino.")
+# --- VISUALIZAÇÃO DE RESSONÂNCIA ---
+col_left, col_right = st.columns([3, 2])
 
-st.caption("CQCE Quantum Explorer v2.0 - Integração Qiskit Aer + Hardware Simulation")
+with col_left:
+    st.subheader("🛰️ Ressonância Magnética do Computador Físico")
+    res_data = engine.gerador_ressonancia(sensor_val)
+    st.area_chart(res_data.set_index('Frequência (GHz)'), color="#00ffcc")
+
+with col_right:
+    st.subheader("🧠 Saída da IA Quântica")
+    # Gráfico de barras com as cores que você escolheu
+    df_ia = pd.DataFrame.from_dict(counts_ia, orient='index', columns=['Ocorrências'])
+    st.bar_chart(df_ia, color="#7000ff")
+
+# --- ÁREA DE CÁLCULOS TÉCNICOS ---
+with st.expander("📝 Ver Cálculos Matemáticos da IA"):
+    st.latex(r"|\psi\rangle = \cos(\theta/2)|0\rangle + e^{i\phi}\sin(\theta/2)|1\rangle")
+    st.write(f"Cálculo da Matriz de Densidade para ruído de **{sensor_val} units**:")
+    st.write(f"Incerteza Relativa calculada: **{(incerteza * 100):.6f}**")
+
+# --- BOTÕES DE COMANDO ---
+st.sidebar.divider()
+if st.sidebar.button("🔊 Testar Ressonância na Caixa"):
+    st.toast("Enviando pulso senoidal via Bluetooth...")
+    st.balloons()
+
+if st.sidebar.button("🚨 Resetar Núcleo"):
+    st.warning("Reiniciando matrizes de coerência...")
