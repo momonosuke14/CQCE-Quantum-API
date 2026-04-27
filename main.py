@@ -5,29 +5,16 @@ from scipy.special import expit
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 
-# --- CONFIGURAÇÃO DA INTERFACE STREAMLIT ---
+# --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="CQCE Quantum Monitor", page_icon="⚛️", layout="wide")
 
 st.title("🛰️ Sistema Quântico CQCE")
-st.write("O motor quântico está ativo e processando ruído em tempo real.")
+st.markdown("---")
 
-# --- LÓGICA DO MOTOR QUÂNTICO (O seu código original) ---
+# --- MOTOR QUÂNTICO ---
 class QuantumEngine:
     def __init__(self):
         self.simulator = AerSimulator()
-
-    def _calculate_tetration(self, n, height):
-        if height == 0: return 1
-        if height == 1: return n
-        if height > 4: height = 4 
-        res = n
-        for _ in range(height - 1):
-            res = math.pow(n, res) if res < 100 else 10**10
-        return res
-
-    def calculate_entropy(self, noise_level):
-        p = expit((noise_level - 500) / 100) 
-        return - (p * math.log2(p + 1e-9) + (1-p) * math.log2(1-p + 1e-9))
 
     def processamento_inverso(self, noise_level):
         qc = QuantumCircuit(1, 1)
@@ -41,43 +28,37 @@ class QuantumEngine:
         counts = job.result().get_counts()
         return counts.get('1', 0) / 256
 
+    def calculate_entropy(self, noise_level):
+        p = expit((noise_level - 500) / 100) 
+        return - (p * math.log2(p + 1e-9) + (1-p) * math.log2(1-p + 1e-9))
+
 engine = QuantumEngine()
 
-# --- INTERFACE DE CONTROLE NO SITE ---
-st.sidebar.header("📡 Entrada de Hardware")
-# Na feira, o Arduino enviará esse dado. Aqui podemos simular ou receber via API.
-noise_input = st.sidebar.slider("Nível de Ruído (Sensor)", 0, 1000, 500)
+# --- INTERFACE ---
+st.sidebar.header("📡 Controle de Hardware")
+noise_input = st.sidebar.slider("Simular Ruído do Sensor", 0, 1000, 500)
 
-# Processando os dados
 eficiencia = engine.processamento_inverso(noise_input)
 entropia = engine.calculate_entropy(noise_input)
-nivel_tetracao = int(entropia * 3)
-distancia_do_caos = abs(0.5 - eficiencia)
 
-# Definindo Status Visual
-if distancia_do_caos < 0.1:
-    status = "COERÊNCIA CRÍTICA"
-    cor = "green"
-elif eficiencia > 0.7:
-    status = "COLAPSO INDUZIDO"
-    cor = "red"
-else:
-    status = "ESTADO DE REPOUSO"
-    cor = "blue"
-
-# --- PAINEL VISUAL ---
+# Painel de métricas
 col1, col2, col3 = st.columns(3)
-col1.metric("Status de Coerência", status)
-col2.metric("Eficiência Quântica", f"{eficiencia * 100:.2f}%")
-col3.metric("Entropia do Sinal", f"{entropia:.4f}")
+
+with col1:
+    st.metric("Eficiência Quântica", f"{eficiencia * 100:.2f}%")
+with col2:
+    st.metric("Entropia do Sinal", f"{entropia:.4f}")
+with col3:
+    status = "ESTÁVEL" if abs(0.5 - eficiencia) < 0.2 else "INSTÁVEL"
+    st.metric("Status do Sistema", status)
 
 st.divider()
 
-if st.button("Simular Disparo Quântico"):
+# Gráfico de Ressonância (Simulado)
+st.subheader("📊 Gráfico de Ressonância Magnética")
+chart_data = np.random.randn(20, 3)
+st.line_chart(chart_data)
+
+if st.button("🚀 Disparar Pulso Quântico"):
     st.balloons()
-    st.success(f"Cálculo finalizado com {nivel_tetracao} níveis de tetração.")
-    st.json({
-        "qubits_virtuais": engine._calculate_tetration(2, nivel_tetracao),
-        "probabilidade_colapso": eficiencia,
-        "ruído_bruto": noise_input
-    })
+    st.success("Pulso processado pelo Qiskit com sucesso!")
